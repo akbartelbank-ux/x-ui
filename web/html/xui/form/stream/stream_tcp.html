@@ -5,10 +5,53 @@
         <a-switch v-model="inbound.stream.tcp.acceptProxyProtocol"></a-switch>
     </a-form-item>
     <a-form-item label='HTTP {{ i18n "camouflage" }}'>
-        <a-switch :checked="inbound.stream.tcp.type === 'http'"
-            @change="checked => inbound.stream.tcp.type = checked ? 'http' : 'none'">
-        </a-switch>
+        <a-space>
+            <a-switch :checked="inbound.stream.tcp.type === 'http'"
+                @change="checked => inbound.stream.tcp.type = checked ? 'http' : 'none'">
+            </a-switch>
+            <a-tooltip v-if="inbound.stream.tcp.type === 'http'">
+                <template slot="title">
+                    <div style="font-size:11px;line-height:1.7;">
+                        <b>Chrome 124 HTTP Headers</b><br/>
+                        شبیه‌سازی کامل request/response<br/>
+                        یک مرورگر واقعی Chrome برای<br/>
+                        دور زدن DPI بازرسی محتوا
+                    </div>
+                </template>
+                <a-button size="small" type="dashed"
+                    style="border-color:#52c41a;color:#52c41a;"
+                    @click="() => {
+                        const req = inbound.stream.tcp.request;
+                        req.version = '1.1';
+                        req.method = 'GET';
+                        req.path = ['/index.html', '/api/health'];
+                        req.headers = [
+                            { name: 'Host', value: inbound.stream.tls.sni || location.hostname },
+                            { name: 'User-Agent', value: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' },
+                            { name: 'Accept', value: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8' },
+                            { name: 'Accept-Language', value: 'fa-IR,fa;q=0.9,en-US;q=0.8,en;q=0.7' },
+                            { name: 'Accept-Encoding', value: 'gzip, deflate, br' },
+                            { name: 'Connection', value: 'keep-alive' },
+                            { name: 'Cache-Control', value: 'max-age=0' },
+                            { name: 'Upgrade-Insecure-Requests', value: '1' },
+                        ];
+                        const res = inbound.stream.tcp.response;
+                        res.version = '1.1';
+                        res.status = '200';
+                        res.reason = 'OK';
+                        res.headers = [
+                            { name: 'Content-Type', value: 'text/html; charset=utf-8' },
+                            { name: 'Server', value: 'nginx/1.24.0' },
+                            { name: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+                            { name: 'X-Content-Type-Options', value: 'nosniff' },
+                        ];
+                    }">
+                    🌐 Chrome Preset
+                </a-button>
+            </a-tooltip>
+        </a-space>
     </a-form-item>
+
 </a-form>
 
 <a-form v-if="inbound.stream.tcp.type === 'http'" :colon="false" :label-col="{ md: {span:8} }"

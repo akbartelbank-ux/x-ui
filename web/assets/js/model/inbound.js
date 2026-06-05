@@ -711,10 +711,10 @@ class xHTTPStreamSettings extends XrayCommonClass {
 
 class HysteriaStreamSettings extends XrayCommonClass {
     constructor(
-        protocol, 
-        version = 2, 
-        auth = '', 
-        udpIdleTimeout = 60, 
+        protocol,
+        version = 2,
+        auth = '',
+        udpIdleTimeout = 60,
         masquerade,
     ) {
         super(protocol);
@@ -723,7 +723,7 @@ class HysteriaStreamSettings extends XrayCommonClass {
         this.udpIdleTimeout = udpIdleTimeout;
         this.masquerade = masquerade;
     }
-    
+
     static fromJson(json = {}) {
         return new HysteriaStreamSettings(
             json.protocol,
@@ -815,11 +815,11 @@ class TlsStreamSettings extends XrayCommonClass {
         minVersion = TLS_VERSION_OPTION.TLS12,
         maxVersion = TLS_VERSION_OPTION.TLS13,
         cipherSuites = '',
-        rejectUnknownSni = false,
+        rejectUnknownSni = true,
         disableSystemRoot = false,
-        enableSessionResumption = false,
+        enableSessionResumption = true,
         certificates = [new TlsStreamSettings.Cert()],
-        alpn = [ALPN_OPTION.H3, ALPN_OPTION.H2, ALPN_OPTION.HTTP1],
+        alpn = [ALPN_OPTION.H2, ALPN_OPTION.HTTP1],
         echServerKeys = '',
         echForceQuery = 'none',
         settings = new TlsStreamSettings.Settings()
@@ -1446,7 +1446,7 @@ class ExternalProxy extends XrayCommonClass {
     }
 
     set hasFragment(value) {
-        this.fragment = value ? {packets: 'tlshello', length: '100-200', interval: '10-20'} : undefined;
+        this.fragment = value ? { packets: 'tlshello', length: '100-200', interval: '10-20' } : undefined;
     }
 
     static fromJson(json = {}) {
@@ -1532,8 +1532,8 @@ class StreamSettings extends XrayCommonClass {
 
     get hasFinalMask() {
         return (this.finalmask.udp && this.finalmask.udp.length > 0) ||
-               (this.finalmask.tcp && this.finalmask.tcp.length > 0) ||
-               this.finalmask.quicParams !== undefined;
+            (this.finalmask.tcp && this.finalmask.tcp.length > 0) ||
+            this.finalmask.quicParams !== undefined;
     }
 
     get isTls() {
@@ -2610,7 +2610,7 @@ Inbound.VmessSettings.Vmess = class extends Inbound.ClientBase {
     constructor(
         id = RandomUtil.randomUUID(),
         security = USERS_SECURITY.AUTO,
-        email,totalGB,expiryTime,enable,tgId,subId,reset,
+        email, totalGB, expiryTime, enable, tgId, subId, reset,
     ) {
         super(email, totalGB, expiryTime, enable, tgId, subId, reset);
         this.id = id;
@@ -2666,7 +2666,7 @@ Inbound.VLESSSettings = class extends Inbound.Settings {
         if (json.testseed && Array.isArray(json.testseed) && json.testseed.length >= 4) {
             testseed = json.testseed;
         }
-        
+
         const obj = new Inbound.VLESSSettings(
             Protocols.VLESS,
             (json.clients || []).map(client => Inbound.VLESSSettings.VLESS.fromJson(client)),
@@ -2714,7 +2714,7 @@ Inbound.VLESSSettings.VLESS = class extends Inbound.ClientBase {
         id = RandomUtil.randomUUID(),
         flow = '',
         reverseTag = '',
-        email,totalGB,expiryTime,enable,tgId,subId,reset,
+        email, totalGB, expiryTime, enable, tgId, subId, reset,
     ) {
         super(email, totalGB, expiryTime, enable, tgId, subId, reset);
         this.id = id;
@@ -2736,8 +2736,8 @@ Inbound.VLESSSettings.VLESS = class extends Inbound.ClientBase {
             id: this.id,
             flow: this.flow,
             reverse: this.reverseTag ? {
-                    tag: this.reverseTag,
-                } : undefined,
+                tag: this.reverseTag,
+            } : undefined,
             ...this._clientBaseToJson(),
         };
     }
@@ -2816,7 +2816,7 @@ Inbound.TrojanSettings = class extends Inbound.Settings {
 Inbound.TrojanSettings.Trojan = class extends Inbound.ClientBase {
     constructor(
         password = RandomUtil.randomSeq(10),
-        email,totalGB,expiryTime,enable,tgId,subId,reset,
+        email, totalGB, expiryTime, enable, tgId, subId, reset,
     ) {
         super(email, totalGB, expiryTime, enable, tgId, subId, reset);
         this.password = password;
@@ -2918,7 +2918,7 @@ Inbound.ShadowsocksSettings.Shadowsocks = class extends Inbound.ClientBase {
     constructor(
         method = '',
         password = RandomUtil.randomShadowsocksPassword(),
-        email,totalGB,expiryTime,enable,tgId,subId,reset,
+        email, totalGB, expiryTime, enable, tgId, subId, reset,
     ) {
         super(email, totalGB, expiryTime, enable, tgId, subId, reset);
         this.method = method;
@@ -2968,7 +2968,7 @@ Inbound.HysteriaSettings = class extends Inbound.Settings {
 Inbound.HysteriaSettings.Hysteria = class extends Inbound.ClientBase {
     constructor(
         auth = RandomUtil.randomSeq(10),
-        email,totalGB,expiryTime,enable,tgId,subId,reset,
+        email, totalGB, expiryTime, enable, tgId, subId, reset,
     ) {
         super(email, totalGB, expiryTime, enable, tgId, subId, reset);
         this.auth = auth;
