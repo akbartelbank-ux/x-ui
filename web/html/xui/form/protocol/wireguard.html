@@ -24,8 +24,39 @@
         <a-switch v-model="inbound.settings.noKernelTun"></a-switch>
     </a-form-item>
     <a-form-item label='{{ i18n "pages.inbounds.protocols.peers" }}'>
-        <a-button type="primary" size="small" @click="inbound.settings.addPeer()">+</a-button>
+        <a-space>
+            <a-button type="primary" size="small" @click="inbound.settings.addPeer()">+</a-button>
+            <a-tooltip>
+                <template slot="title">
+                    <div style="font-size:12px;line-height:1.6;">
+                        <b>Cloudflare WARP Quick Config</b><br/>
+                        کلیدهای WARP را پر می‌کند.<br/>
+                        برای IP اختصاصی از wgcf یا<br/>
+                        <code>warp-go</code> استفاده کنید.
+                    </div>
+                </template>
+                <a-button
+                    type="dashed"
+                    size="small"
+                    style="border-color:#f5a623;color:#f5a623;"
+                    @click="() => {
+                        const warpPeer = inbound.settings.peers[0];
+                        if (warpPeer) {
+                            warpPeer.publicKey = 'bmXOC+F1FxEMF9dyiK2H5/1SUtzH0JuVo51h2wPfgyo=';
+                            warpPeer.psk = '';
+                            warpPeer.allowedIPs = ['0.0.0.0/0', '::/0'];
+                            warpPeer.keepAlive = 25;
+                        }
+                        inbound.settings.mtu = 1280;
+                        inbound.port = 2408;
+                        this.$message.info('WARP endpoint: engage.cloudflareclient.com:2408 — برای IP اختصاصی از wgcf استفاده کنید');
+                    }">
+                    ☁️ WARP
+                </a-button>
+            </a-tooltip>
+        </a-space>
     </a-form-item>
+
     <a-form v-for="(peer, index) in inbound.settings.peers" :colon="false" :label-col="{ md: {span:8} }" :wrapper-col="{ md: {span:14} }">
         <a-divider style="margin:0;">
             Peer [[ index + 1 ]]
@@ -73,7 +104,7 @@
             </template>
         </a-form-item>
         <a-form-item label='{{ i18n "pages.inbounds.protocols.keepAlive" }}'>
-            <a-input-number v-model.number="peer.keepAlive" :min="0"></a-input>
+            <a-input-number v-model.number="peer.keepAlive" :min="0"></a-input-number>
         </a-form-item>    
     </a-form>
 </a-form>
