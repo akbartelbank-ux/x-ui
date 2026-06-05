@@ -139,43 +139,101 @@ install_x-ui() {
         fi
     fi
 
-    cd /usr/local/
-
-    if [ $# == 0 ]; then
-        last_version=$(curl -Ls "https://api.github.com/repos/akbartelbank-ux/x-ui/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-        if [[ ! -n "$last_version" ]]; then
-            echo -e "${red}Failed to fetch x-ui version, it maybe due to Github API restrictions, please try it later${plain}"
-            exit 1
-        fi
-        echo -e "Got x-ui latest version: ${last_version}, beginning the installation..."
-        wget -N --no-check-certificate -O /usr/local/x-ui-linux-$(arch).tar.gz https://github.com/akbartelbank-ux/x-ui/releases/download/${last_version}/x-ui-linux-$(arch).tar.gz
-        if [[ $? -ne 0 ]]; then
-            echo -e "${red}Downloading x-ui failed, please be sure that your server can access Github ${plain}"
-            exit 1
-        fi
-    else
-        last_version=$1
-        url="https://github.com/akbartelbank-ux/x-ui/releases/download/${last_version}/x-ui-linux-$(arch).tar.gz"
-        echo -e "Beginning to install x-ui $1"
-        wget -N --no-check-certificate -O /usr/local/x-ui-linux-$(arch).tar.gz ${url}
-        if [[ $? -ne 0 ]]; then
-            echo -e "${red}download x-ui $1 failed,please check the version exists${plain}"
-            exit 1
-        fi
+    # Install git and unzip if not present
+    echo -e "${green}Installing prerequisites (git, unzip)...${plain}"
+    if [[ "${release}" == "ubuntu" || "${release}" == "debian" || "${release}" == "armbian" ]]; then
+        apt-get install -y -q git unzip
+    elif [[ "${release}" == "centos" || "${release}" == "almalinux" || "${release}" == "rocky" || "${release}" == "ol" ]]; then
+        yum install -y -q git unzip
+    elif [[ "${release}" == "fedora" || "${release}" == "amzn" ]]; then
+        dnf install -y -q git unzip
+    elif [[ "${release}" == "arch" || "${release}" == "manjaro" || "${release}" == "parch" ]]; then
+        pacman -Syu --noconfirm git unzip
     fi
 
+    # Install Go temporarily if not present
+    if ! command -v go &> /dev/null; then
+        echo -e "${yellow}Go is not installed. Temporarily downloading Go to compile x-ui from source...${plain}"
+        local go_version="1.21.8"
+        local go_arch="amd64"
+        case "$(uname -m)" in
+            x86_64 | x64 | amd64) go_arch="amd64" ;;
+            armv8* | armv8 | arm64 | aarch64) go_arch="arm64" ;;
+            i*86 | x86) go_arch="386" ;;
+            armv7* | armv7 | arm) go_arch="armv7l" ;;
+            *) echo -e "${red}Unsupported CPU architecture for Go compilation!${plain}" && exit 1 ;;
+        esac
+        wget -qN --no-check-certificate -O /tmp/go.tar.gz "https://go.dev/dl/go${go_version}.linux-${go_arch}.tar.gz"
+        if [[ $? -ne 0 ]]; then
+            echo -e "${red}Failed to download Go compiler!${plain}"
+            exit 1
+        fi
+        rm -rf /tmp/go
+        tar -C /tmp -xzf /tmp/go.tar.gz
+        export PATH=$PATH:/tmp/go/bin
+        rm -f /tmp/go.tar.gz
+    fi
+
+    # Clone source code
+    echo -e "${green}Cloning x-ui source code from your repository...${plain}"
+    rm -rf /tmp/x-ui-source
+    git clone https://github.com/akbartelbank-ux/x-ui.git /tmp/x-ui-source
+    if [[ $? -ne 0 ]]; then
+        echo -e "${red}Cloning repository failed!${plain}"
+        exit 1
+    fi
+
+    cd /tmp/x-ui-source
+    echo -e "${green}Compiling x-ui from source...${plain}"
+    go build -v -o /tmp/x-ui-source/x-ui main.go
+    if [[ $? -ne 0 ]]; then
+        echo -e "${red}Compilation failed!${plain}"
+        exit 1
+    fi
+
+    # Download Xray-core
+    echo -e "${green}Downloading official Xray-core binary...${plain}"
+    local xray_version="v26.2.6"
+    local xray_arch="linux-64"
+    case "$(uname -m)" in
+        x86_64 | x64 | amd64) xray_arch="linux-64" ;;
+        armv8* | armv8 | arm64 | aarch64) xray_arch="linux-arm64-v8a" ;;
+        i*86 | x86) xray_arch="linux-32" ;;
+        armv7* | armv7 | arm) xray_arch="linux-arm32-v7a" ;;
+        *) echo -e "${red}Unsupported CPU architecture for Xray-core!${plain}" && exit 1 ;;
+    esac
+    mkdir -p /tmp/x-ui-source/bin
+    wget -qN --no-check-certificate -O /tmp/xray.zip "https://github.com/XTLS/Xray-core/releases/download/${xray_version}/Xray-${xray_arch}.zip"
+    if [[ $? -ne 0 ]]; then
+        echo -e "${red}Failed to download Xray-core!${plain}"
+        exit 1
+    fi
+    mkdir -p /tmp/xray_temp
+    unzip -q -o /tmp/xray.zip -d /tmp/xray_temp
+    mv /tmp/xray_temp/xray /tmp/x-ui-source/bin/xray-linux-$(arch)
+    mv /tmp/xray_temp/geoip.dat /tmp/x-ui-source/bin/geoip.dat
+    mv /tmp/xray_temp/geosite.dat /tmp/x-ui-source/bin/geosite.dat
+    rm -rf /tmp/xray.zip /tmp/xray_temp
+
+    # Clean up temporary Go if we installed it
+    if [[ -d /tmp/go ]]; then
+        rm -rf /tmp/go
+    fi
+
+    # Move to destination
     if [[ -e /usr/local/x-ui/ ]]; then
         systemctl stop x-ui
         mv /usr/local/x-ui/ /usr/local/x-ui-backup/ -f
         cp /etc/x-ui/x-ui.db /usr/local/x-ui-backup/ -f
     fi
 
-    tar zxvf x-ui-linux-$(arch).tar.gz
-    rm x-ui-linux-$(arch).tar.gz -f
-    cd x-ui
+    mkdir -p /usr/local/x-ui
+    cp -rf /tmp/x-ui-source/* /usr/local/x-ui/
+    rm -rf /tmp/x-ui-source
+
+    cd /usr/local/x-ui
     chmod +x x-ui
 
-    # Check the system's architecture and rename the file accordingly
     if [[ $(arch) == "armv7" ]]; then
         mv bin/xray-linux-$(arch) bin/xray-linux-arm
         chmod +x bin/xray-linux-arm
@@ -185,20 +243,15 @@ install_x-ui() {
     wget --no-check-certificate -O /usr/bin/x-ui https://raw.githubusercontent.com/akbartelbank-ux/x-ui/main/x-ui.sh
     chmod +x /usr/local/x-ui/x-ui.sh
     chmod +x /usr/bin/x-ui
+
     config_after_install
     rm /usr/local/x-ui-backup/ -rf
-    #echo -e "If it is a new installation, the default web port is ${green}54321${plain}, The username and password are ${green}admin${plain} by default"
-    #echo -e "Please make sure that this port is not occupied by other procedures,${yellow} And make sure that port 54321 has been released${plain}"
-    #    echo -e "If you want to modify the 54321 to other ports and enter the x-ui command to modify it, you must also ensure that the port you modify is also released"
-    #echo -e ""
-    #echo -e "If it is updated panel, access the panel in your previous way"
-    #echo -e ""
+
     systemctl daemon-reload
     systemctl enable x-ui
-    systemctl start x-ui
-    echo -e "${green}x-ui ${last_version}${plain} installation finished, it is up and running now..."
+    systemctl restart x-ui
+    echo -e "${green}x-ui compiled and installed successfully from source!${plain}"
     echo -e ""
-    echo -e "You may access the Panel with following URL(s):${yellow}"
     /usr/local/x-ui/x-ui uri
     echo -e "${plain}"
     echo "X-UI Control Menu Usage"
