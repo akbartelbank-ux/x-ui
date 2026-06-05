@@ -1,0 +1,42 @@
+{
+  "api": {
+    "services": [
+      "HandlerService",
+      "LoggerService",
+      "StatsService",
+      "RoutingService",
+      "ReflectionService"
+    ],
+    "listen": "127.0.0.1:62789",
+    "tag": "api"
+  },
+  "log": {
+    "access": "none",
+    "dnsLog": false,
+    "error": "",
+    "loglevel": "warning",
+    "maskAddress": ""
+  },
+  "policy": {
+    "levels": {
+      "0": {
+        "statsUserDownlink": true,
+        "statsUserOnline": true,
+        "statsUserUplink": true
+      }
+    },
+    "system": {
+      "statsInboundDownlink": true,
+      "statsInboundUplink": true,
+      "statsOutboundDownlink": true,
+      "statsOutboundUplink": true
+    }
+  },
+  "inbounds": [],
+  "outbounds": [],
+  "routing": {
+    "domainStrategy": "AsIs",
+    "rules": []
+  },
+  "stats": {}
+}
