@@ -48,6 +48,7 @@ func (a *ServerController) initRouter(g *gin.RouterGroup) {
 	g.GET("/getNewX25519Cert", a.getNewX25519Cert)
 
 	g.POST("/getNewEchCert", a.getNewEchCert)
+	g.POST("/scanReality", a.scanReality)
 	g.POST("/stopXrayService", a.stopXrayService)
 	g.POST("/restartXrayService", a.restartXrayService)
 	g.POST("/installXray/:version", a.installXray)
@@ -217,4 +218,18 @@ func (a *ServerController) getNewVlessEnc(c *gin.Context) {
 		return
 	}
 	jsonObj(c, out, nil)
+}
+
+func (a *ServerController) scanReality(c *gin.Context) {
+	domain := c.PostForm("domain")
+	if domain == "" {
+		jsonMsg(c, "Domain is required", fmt.Errorf("domain cannot be empty"))
+		return
+	}
+	res, err := a.serverService.ScanRealityDomain(domain)
+	if err != nil {
+		jsonMsg(c, "failed to scan domain", err)
+		return
+	}
+	jsonObj(c, res, nil)
 }

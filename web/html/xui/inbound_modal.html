@@ -16,12 +16,16 @@
         confirm: null,
         inbound: new Inbound(),
         dbInbound: new DBInbound(),
+        scanningDomain: false,
+        scanResult: null,
         ok() {
             ObjectUtil.execute(inModal.confirm, inModal.inbound, inModal.dbInbound);
         },
         show({ title='', okText='{{ i18n "confirm" }}', inbound=null, dbInbound=null, confirm=(inbound, dbInbound)=>{}, isEdit=false  }) {
             this.title = title;
             this.okText = okText;
+            this.scanningDomain = false;
+            this.scanResult = null;
             if (inbound) {
                 this.inbound = Inbound.fromJson(inbound.toJson());
             } else {
@@ -235,6 +239,72 @@
             },
             resetTestseed() {
                 this.$set(this.inbound.settings, 'testseed', [900, 500, 900, 256]);
+            },
+            async scanRealityDomain() {
+                const dest = this.inbound.stream.reality.dest;
+                if (!dest) {
+                    this.$message.warning("Please enter a destination domain / لطفا دامنه مقصد را وارد کنید");
+                    return;
+                }
+                this.inModal.scanningDomain = true;
+                this.inModal.scanResult = null;
+                try {
+                    const msg = await HttpUtil.post('/server/scanReality', {domain: dest});
+                    if (msg.success) {
+                        this.inModal.scanResult = msg.obj;
+                        if (msg.obj.supported) {
+                            this.$message.success("Domain is compatible with Reality / دامنه با Reality سازگار است");
+                        } else {
+                            this.$message.error("Domain is NOT compatible / دامنه سازگار نیست: " + (msg.obj.error || ''));
+                        }
+                    } else {
+                        this.$message.error(msg.msg || "Scan failed / بررسی ناموفق بود");
+                    }
+                } catch(e) {
+                    this.$message.error("Request failed / خطایی رخ داد");
+                    console.error(e);
+                } finally {
+                    this.inModal.scanningDomain = false;
+                }
+            },
+            applyFallbackPreset(fallback, preset) {
+                if (preset === 'nginx_local_80') {
+                    fallback.name = "";
+                    fallback.alpn = "";
+                    fallback.path = "";
+                    fallback.dest = "127.0.0.1:80";
+                    fallback.xver = 0;
+                } else if (preset === 'nginx_local_443') {
+                    fallback.name = "";
+                    fallback.alpn = "";
+                    fallback.path = "";
+                    fallback.dest = "127.0.0.1:443";
+                    fallback.xver = 0;
+                } else if (preset === 'nginx_unix') {
+                    fallback.name = "";
+                    fallback.alpn = "";
+                    fallback.path = "";
+                    fallback.dest = "/run/nginx.sock";
+                    fallback.xver = 0;
+                } else if (preset === 'redirect_microsoft') {
+                    fallback.name = "";
+                    fallback.alpn = "";
+                    fallback.path = "";
+                    fallback.dest = "microsoft.com:443";
+                    fallback.xver = 0;
+                } else if (preset === 'redirect_google') {
+                    fallback.name = "";
+                    fallback.alpn = "";
+                    fallback.path = "";
+                    fallback.dest = "google.com:443";
+                    fallback.xver = 0;
+                } else if (preset === 'redirect_cloudflare') {
+                    fallback.name = "";
+                    fallback.alpn = "";
+                    fallback.path = "";
+                    fallback.dest = "cloudflare.com:443";
+                    fallback.xver = 0;
+                }
             }
         },
     });

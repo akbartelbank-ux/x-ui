@@ -14,6 +14,16 @@
             <a-icon type="delete" @click="() => inbound.settings.delFallback(index)"
                 style="color: rgb(255, 77, 79);cursor: pointer;" />
         </a-divider>
+        <a-form-item label="Preset / پیش‌فرض">
+            <a-select placeholder="Select preset... / انتخاب پیش‌فرض" @change="(val) => applyFallbackPreset(fallback, val)" :dropdown-class-name="themeSwitcher.currentTheme">
+                <a-select-option value="nginx_local_80">Local Nginx (Port 80)</a-select-option>
+                <a-select-option value="nginx_local_443">Local Nginx (Port 443)</a-select-option>
+                <a-select-option value="nginx_unix">Local Nginx (Unix Socket)</a-select-option>
+                <a-select-option value="redirect_microsoft">Redirect to Microsoft (microsoft.com)</a-select-option>
+                <a-select-option value="redirect_google">Redirect to Google (google.com)</a-select-option>
+                <a-select-option value="redirect_cloudflare">Redirect to Cloudflare (cloudflare.com)</a-select-option>
+            </a-select>
+        </a-form-item>
         <a-form-item label='{{ i18n "pages.inbounds.stream.tls.sni" }}'>
             <a-input v-model="fallback.name"></a-input>
         </a-form-item>

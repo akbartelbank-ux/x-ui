@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"runtime"
+	"strings"
 	"sync"
 
 	"github.com/akbartelbank-ux/x-ui/logger"
@@ -157,6 +158,23 @@ func (s *XrayService) GetXrayConfig() (*xray.Config, error) {
 			inbound.Settings = string(modifiedSettings)
 		}
 
+		hasVision := false
+		if inbound.Protocol == "vless" {
+			var settings map[string]interface{}
+			if err := json.Unmarshal([]byte(inbound.Settings), &settings); err == nil {
+				if clients, ok := settings["clients"].([]interface{}); ok {
+					for _, client := range clients {
+						if cMap, ok := client.(map[string]interface{}); ok {
+							if flow, ok := cMap["flow"].(string); ok && strings.HasPrefix(flow, "xtls-rprx-vision") {
+								hasVision = true
+								break
+							}
+						}
+					}
+				}
+			}
+		}
+
 		if len(inbound.StreamSettings) > 0 {
 			// Unmarshal stream JSON
 			var stream map[string]interface{}
@@ -175,11 +193,32 @@ func (s *XrayService) GetXrayConfig() (*xray.Config, error) {
 
 			delete(stream, "externalProxy")
 
+			if hasVision {
+				sockopt, ok := stream["sockopt"].(map[string]interface{})
+				if !ok {
+					sockopt = make(map[string]interface{})
+				}
+				sockopt["tcpFastOpen"] = true
+				sockopt["tcpNoDelay"] = true
+				stream["sockopt"] = sockopt
+			}
+
 			newStream, err := json.MarshalIndent(stream, "", "  ")
 			if err != nil {
 				return nil, err
 			}
 			inbound.StreamSettings = string(newStream)
+		} else if hasVision {
+			stream := map[string]interface{}{
+				"sockopt": map[string]interface{}{
+					"tcpFastOpen": true,
+					"tcpNoDelay":  true,
+				},
+			}
+			newStream, err := json.MarshalIndent(stream, "", "  ")
+			if err == nil {
+				inbound.StreamSettings = string(newStream)
+			}
 		}
 
 		inboundConfig := inbound.GenXrayInboundConfig()

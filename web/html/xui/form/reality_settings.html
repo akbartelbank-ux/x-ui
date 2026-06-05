@@ -13,7 +13,30 @@
         </a-select>
     </a-form-item>
     <a-form-item label='{{ i18n "pages.inbounds.stream.reality.dest" }}'>
-        <a-input v-model.trim="inbound.stream.reality.dest"></a-input>
+        <a-row :gutter="8">
+            <a-col :span="18">
+                <a-input v-model.trim="inbound.stream.reality.dest"></a-input>
+            </a-col>
+            <a-col :span="6">
+                <a-button type="primary" block @click="scanRealityDomain" :loading="inModal.scanningDomain">Scan / بررسی</a-button>
+            </a-col>
+        </a-row>
+    </a-form-item>
+    <a-form-item v-if="inModal.scanResult" label="Scan Status / نتیجه بررسی">
+        <a-alert :message="inModal.scanResult.supported ? 'Supported / پشتیبانی می‌شود' : 'Not Supported / پشتیبانی نمی‌شود'"
+                 :type="inModal.scanResult.supported ? 'success' : 'error'"
+                 show-icon>
+            <template slot="description">
+                <div style="font-size: 13px; line-height: 1.6;">
+                    <b>TCP:</b> [[ inModal.scanResult.tcpConnected ? 'Connected' : 'Failed' ]]<br/>
+                    <b>TLS Handshake:</b> [[ inModal.scanResult.tlsHandshake ? 'Success' : 'Failed' ]]<br/>
+                    <b>TLS Version:</b> [[ inModal.scanResult.tlsVersion ]]<br/>
+                    <b>ALPN:</b> [[ inModal.scanResult.alpn ]]<br/>
+                    <b>Issuer:</b> [[ inModal.scanResult.issuer ]]<br/>
+                    <span v-if="inModal.scanResult.error" style="color: #ff4d4f; font-weight: bold;"><b>Error:</b> [[ inModal.scanResult.error ]]</span>
+                </div>
+            </template>
+        </a-alert>
     </a-form-item>
     <a-form-item label='{{ i18n "pages.inbounds.stream.tls.sni" }}'>
         <a-input v-model.trim="inbound.stream.reality.serverNames"></a-input>

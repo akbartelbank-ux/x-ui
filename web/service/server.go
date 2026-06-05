@@ -3,11 +3,13 @@ package service
 import (
 	"archive/zip"
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/fs"
 	"mime/multipart"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -29,7 +31,7 @@ import (
 	"github.com/shirou/gopsutil/v4/host"
 	"github.com/shirou/gopsutil/v4/load"
 	"github.com/shirou/gopsutil/v4/mem"
-	"github.com/shirou/gopsutil/v4/net"
+	psnet "github.com/shirou/gopsutil/v4/net"
 )
 
 type ProcessState string
@@ -147,7 +149,7 @@ func (s *ServerService) GetStatus(lastStatus *Status) *Status {
 		status.Loads = []float64{avgState.Load1, avgState.Load5, avgState.Load15}
 	}
 
-	ioStats, err := net.IOCounters(false)
+	ioStats, err := psnet.IOCounters(false)
 	if err != nil {
 		logger.Warning("get io counters failed:", err)
 	} else if len(ioStats) > 0 {
@@ -206,7 +208,7 @@ func (s *ServerService) GetStatus(lastStatus *Status) *Status {
 	status.HostInfo.HostName, _ = os.Hostname()
 
 	// get ip address
-	netInterfaces, _ := net.Interfaces()
+	netInterfaces, _ := psnet.Interfaces()
 	for i := 0; i < len(netInterfaces); i++ {
 		if len(netInterfaces[i].Flags) > 2 && netInterfaces[i].Flags[0] == "up" && netInterfaces[i].Flags[1] != "loopback" {
 			addrs := netInterfaces[i].Addrs
@@ -704,4 +706,91 @@ func (s *ServerService) GetNewVlessEnc() (any, error) {
 	return map[string]any{
 		"auths": auths,
 	}, nil
+}
+
+func (s *ServerService) ScanRealityDomain(domain string) (interface{}, error) {
+	host, port, err := net.SplitHostPort(domain)
+	if err != nil {
+		host = domain
+		port = "443"
+	}
+	addr := net.JoinHostPort(host, port)
+
+	dialer := &net.Dialer{
+		Timeout: 5 * time.Second,
+	}
+
+	result := map[string]interface{}{
+		"tcpConnected": false,
+		"tlsHandshake": false,
+		"tlsVersion":   "",
+		"alpn":         "",
+		"issuer":       "",
+		"supported":    false,
+		"error":        "",
+	}
+
+	// 1. TCP connection test
+	conn, err := dialer.Dial("tcp", addr)
+	if err != nil {
+		result["error"] = fmt.Sprintf("TCP Connection failed: %v", err)
+		return result, nil
+	}
+	defer conn.Close()
+	result["tcpConnected"] = true
+
+	// 2. TLS handshake test (specifically requesting TLS 1.3 and ALPNs h2/http/1.1)
+	config := &tls.Config{
+		ServerName:         host,
+		InsecureSkipVerify: true,
+		MinVersion:         tls.VersionTLS12,
+		MaxVersion:         tls.VersionTLS13,
+		NextProtos:         []string{"h2", "http/1.1"},
+	}
+
+	tlsConn := tls.Client(conn, config)
+	err = tlsConn.Handshake()
+	if err != nil {
+		result["error"] = fmt.Sprintf("TLS Handshake failed: %v", err)
+		return result, nil
+	}
+	defer tlsConn.Close()
+	result["tlsHandshake"] = true
+
+	state := tlsConn.ConnectionState()
+
+	// Check TLS Version
+	var tlsVersionStr string
+	switch state.Version {
+	case tls.VersionTLS13:
+		tlsVersionStr = "TLS 1.3"
+	case tls.VersionTLS12:
+		tlsVersionStr = "TLS 1.2"
+	case tls.VersionTLS11:
+		tlsVersionStr = "TLS 1.1"
+	case tls.VersionTLS10:
+		tlsVersionStr = "TLS 1.0"
+	default:
+		tlsVersionStr = fmt.Sprintf("Unknown (%d)", state.Version)
+	}
+	result["tlsVersion"] = tlsVersionStr
+	result["alpn"] = state.NegotiatedProtocol
+
+	if len(state.PeerCertificates) > 0 {
+		cert := state.PeerCertificates[0]
+		result["issuer"] = cert.Issuer.CommonName
+	}
+
+	// Reality requires TLS 1.3
+	if state.Version == tls.VersionTLS13 && (state.NegotiatedProtocol == "h2" || state.NegotiatedProtocol == "http/1.1") {
+		result["supported"] = true
+	} else {
+		if state.Version != tls.VersionTLS13 {
+			result["error"] = "Reality requires TLS 1.3, but the server negotiated " + tlsVersionStr
+		} else {
+			result["error"] = "Reality requires ALPN h2 or http/1.1, but negotiated: " + state.NegotiatedProtocol
+		}
+	}
+
+	return result, nil
 }
