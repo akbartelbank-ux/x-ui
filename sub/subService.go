@@ -110,6 +110,14 @@ func (s *SubService) getInboundsBySubId(subId string) ([]*model.Inbound, error) 
 	if err != nil {
 		return nil, err
 	}
+	// Also include wireguard inbounds (they don't have per-client subId)
+	var wgInbounds []*model.Inbound
+	err = db.Model(model.Inbound{}).Preload("ClientStats").
+		Where("protocol = ? AND enable = ?", "wireguard", true).
+		Find(&wgInbounds).Error
+	if err == nil && len(wgInbounds) > 0 {
+		inbounds = append(inbounds, wgInbounds...)
+	}
 	return inbounds, nil
 }
 
@@ -157,14 +165,85 @@ func (s *SubService) getLink(inbound *model.Inbound, email string) string {
 		return s.genShadowsocksLink(inbound, email)
 	case "hysteria":
 		return s.genHysteriaLink(inbound, email)
+	case "wireguard":
+		return s.genWireguardLink(inbound)
 	}
 	return ""
+}
+
+func (s *SubService) genWireguardLink(inbound *model.Inbound) string {
+	if inbound.Protocol != "wireguard" {
+		return ""
+	}
+	var settings map[string]interface{}
+	if err := json.Unmarshal([]byte(inbound.Settings), &settings); err != nil {
+		return ""
+	}
+
+	serverPubKey, _ := settings["pubKey"].(string)
+	mtu, _ := settings["mtu"].(float64)
+	peers, _ := settings["peers"].([]interface{})
+	address := s.address
+	port := inbound.Port
+
+	if len(peers) == 0 {
+		return ""
+	}
+
+	links := ""
+	for i, peerRaw := range peers {
+		peer, ok := peerRaw.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		peerPrivKey, _ := peer["privateKey"].(string)
+		peerPsk, _ := peer["preSharedKey"].(string)
+		keepAlive, _ := peer["keepAlive"].(float64)
+		allowedIPsRaw, _ := peer["allowedIPs"].([]interface{})
+
+		// Use first allowedIP as client interface address
+		clientIP := "10.0.0.2/32"
+		if len(allowedIPsRaw) > 0 {
+			clientIP, _ = allowedIPsRaw[0].(string)
+		}
+
+		txt := "[Interface]\n"
+		if peerPrivKey != "" {
+			txt += fmt.Sprintf("PrivateKey = %s\n", peerPrivKey)
+		}
+		txt += fmt.Sprintf("Address = %s\n", clientIP)
+		txt += "DNS = 1.1.1.1, 9.9.9.9\n"
+		if mtu > 0 {
+			txt += fmt.Sprintf("MTU = %d\n", int(mtu))
+		}
+		txt += fmt.Sprintf("\n# %s - Peer %d\n", inbound.Remark, i+1)
+		txt += "[Peer]\n"
+		if serverPubKey != "" {
+			txt += fmt.Sprintf("PublicKey = %s\n", serverPubKey)
+		}
+		if peerPsk != "" {
+			txt += fmt.Sprintf("PresharedKey = %s\n", peerPsk)
+		}
+		txt += "AllowedIPs = 0.0.0.0/0, ::/0\n"
+		txt += fmt.Sprintf("Endpoint = %s:%d", address, port)
+		if keepAlive > 0 {
+			txt += fmt.Sprintf("\nPersistentKeepalive = %d", int(keepAlive))
+		}
+
+		if i > 0 {
+			links += "\n"
+		}
+		// Encode as data URI so subscription clients can handle it
+		links += "wireguard://" + base64.StdEncoding.EncodeToString([]byte(txt)) + "#" + url.PathEscape(fmt.Sprintf("%s-Peer%d", inbound.Remark, i+1))
+	}
+	return links
 }
 
 func (s *SubService) genVmessLink(inbound *model.Inbound, email string) string {
 	if inbound.Protocol != model.VMess {
 		return ""
 	}
+
 	obj := map[string]interface{}{
 		"v":    "2",
 		"add":  s.address,
@@ -206,7 +285,7 @@ func (s *SubService) genVmessLink(inbound *model.Inbound, email string) string {
 		grpc, _ := stream["grpcSettings"].(map[string]interface{})
 		obj["path"], _ = grpc["serviceName"].(string)
 		obj["authority"], _ = grpc["authority"].(string)
-		if grpc["multiMode"].(bool) {
+		if multiMode, ok := grpc["multiMode"].(bool); ok && multiMode {
 			obj["type"] = "multi"
 		}
 	case "httpupgrade":
@@ -387,9 +466,9 @@ func (s *SubService) genVlessLink(inbound *model.Inbound, email string) string {
 		}
 	case "grpc":
 		grpc, _ := stream["grpcSettings"].(map[string]interface{})
-		params["serviceName"] = grpc["serviceName"].(string)
+		params["serviceName"], _ = grpc["serviceName"].(string)
 		params["authority"], _ = grpc["authority"].(string)
-		if grpc["multiMode"].(bool) {
+		if multiMode, ok := grpc["multiMode"].(bool); ok && multiMode {
 			params["mode"] = "multi"
 		}
 	case "httpupgrade":
@@ -617,9 +696,9 @@ func (s *SubService) genTrojanLink(inbound *model.Inbound, email string) string 
 		}
 	case "grpc":
 		grpc, _ := stream["grpcSettings"].(map[string]interface{})
-		params["serviceName"] = grpc["serviceName"].(string)
+		params["serviceName"], _ = grpc["serviceName"].(string)
 		params["authority"], _ = grpc["authority"].(string)
-		if grpc["multiMode"].(bool) {
+		if multiMode, ok := grpc["multiMode"].(bool); ok && multiMode {
 			params["mode"] = "multi"
 		}
 	case "httpupgrade":
@@ -843,9 +922,9 @@ func (s *SubService) genShadowsocksLink(inbound *model.Inbound, email string) st
 		}
 	case "grpc":
 		grpc, _ := stream["grpcSettings"].(map[string]interface{})
-		params["serviceName"] = grpc["serviceName"].(string)
+		params["serviceName"], _ = grpc["serviceName"].(string)
 		params["authority"], _ = grpc["authority"].(string)
-		if grpc["multiMode"].(bool) {
+		if multiMode, ok := grpc["multiMode"].(bool); ok && multiMode {
 			params["mode"] = "multi"
 		}
 	case "httpupgrade":

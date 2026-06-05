@@ -7,9 +7,29 @@
     <!-- TCP Masks (RAW, WS, HTTPUpgrade, gRPC, XHTTP) -->
     <template v-if="['tcp', 'ws', 'grpc', 'httpupgrade', 'xhttp'].includes(inbound.stream.network)">
         <a-form-item label='{{ i18n "pages.inbounds.stream.finalmask.tcpMasks" }}'>
-            <a-button icon="plus" type="primary" size="small"
-                @click="inbound.stream.addTcpMask('header-custom')"></a-button>
+            <a-space>
+                <a-button icon="plus" type="primary" size="small"
+                    @click="inbound.stream.addTcpMask('header-custom')"></a-button>
+                <a-tooltip>
+                    <template slot="title">
+                        <span>{{ i18n "pages.inbounds.stream.finalmask.dpiBypassDesc" }}</span>
+                    </template>
+                    <a-button
+                        type="dashed"
+                        size="small"
+                        icon="shield"
+                        style="border-color:#faad14;color:#faad14;"
+                        @click="() => {
+                            inbound.stream.addTcpMask('fragment');
+                            const last = inbound.stream.finalmask.tcp[inbound.stream.finalmask.tcp.length - 1];
+                            last.settings = { packets: 'tlshello', length: '100-200', delay: '10-20', maxSplit: '0' };
+                        }">
+                        🛡️ DPI Bypass (Iran)
+                    </a-button>
+                </a-tooltip>
+            </a-space>
         </a-form-item>
+
         <template v-if="inbound.stream.finalmask.tcp && inbound.stream.finalmask.tcp.length > 0">
             <a-form v-for="(mask, index) in inbound.stream.finalmask.tcp"
                 :key="'tcp-' + index" :colon="false"
