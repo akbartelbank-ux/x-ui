@@ -101,6 +101,9 @@
         </a-form-item>
         <a-form-item label='{{ i18n "pages.inbounds.stream.tls.echConfig" }}'>
             <a-input v-model="inbound.stream.tls.settings.echConfigList"></a-input>
+            <div style="font-size: 11px; color: #8c8c8c; margin-top: 4px; line-height: 1.5;">
+                💡 <b>راهنمای ECH (Encrypted Client Hello):</b> برای استفاده از ECH و رمزنگاری SNI (جهت جلوگیری از فیلترینگ بر اساس نام دامنه توسط DPI)، باید مقدار ECH Config بالا را در رکورد HTTPS دی‌ان‌اس (DNS HTTPS record) دامنه خود قرار دهید تا کلاینت‌ها بتوانند پیش از اتصال آن را دریافت کنند.
+            </div>
         </a-form-item>
         <a-form-item label='{{ i18n "pages.inbounds.stream.tls.echForceQuery" }}'>
             <a-select v-model="inbound.stream.tls.echForceQuery" :dropdown-class-name="themeSwitcher.currentTheme">

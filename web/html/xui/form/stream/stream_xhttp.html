@@ -155,6 +155,10 @@
         </a-form-item>
         <a-form-item label='{{ i18n "pages.inbounds.stream.xhttp.noSSEHeader" }}'>
             <a-switch v-model="inbound.stream.xhttp.extra.noSSEHeader"></a-switch>
+            <a-alert v-if="!inbound.stream.xhttp.extra.noSSEHeader"
+                type="warning" show-icon style="margin-top:4px;font-size:11px;"
+                message="⚠️ فعال کردن این گزینه (noSSEHeader) برای دور زدن DPI به شدت پیشنهاد می‌شود. در غیر این صورت، هدرهای SSE ارسال شده و فایروال به راحتی ترافیک را شناسایی می‌کند.">
+            </a-alert>
         </a-form-item>
         <a-form-item label='{{ i18n "pages.inbounds.stream.xhttp.serverMaxHeaderBytes" }}'>
             <a-tooltip placement="bottom">

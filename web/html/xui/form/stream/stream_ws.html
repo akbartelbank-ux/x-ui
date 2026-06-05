@@ -4,13 +4,55 @@
         <a-switch v-model="inbound.stream.ws.acceptProxyProtocol"></a-switch>
     </a-form-item>
     <a-form-item label='{{ i18n "path" }}'>
-        <a-input v-model.trim="inbound.stream.ws.path"></a-input>
+        <a-input v-model.trim="inbound.stream.ws.path" placeholder="/api/v1/stream">
+            <a-tooltip slot="suffix">
+                <template slot="title">
+                    <div style="font-size:11px;line-height:1.6;">
+                        از path معنادار استفاده کنید<br/>
+                        مثل: <code>/api/v1/messages</code><br/>
+                        <b>از "/ws" یا "/" خودداری کنید!</b><br/>
+                        DPI این path‌ها را می‌شناسد.
+                    </div>
+                </template>
+                <a-icon type="question-circle" style="color:rgba(0,0,0,.45)"></a-icon>
+            </a-tooltip>
+        </a-input>
+        <a-alert v-if="inbound.stream.ws.path === '/' || inbound.stream.ws.path === '/ws'"
+            type="warning" show-icon style="margin-top:4px;font-size:11px;"
+            message="⚠️ این path توسط DPI شناسایی می‌شود. از /api/v1/... استفاده کنید.">
+        </a-alert>
     </a-form-item>
     <a-form-item label='{{ i18n "host" }}'>
-        <a-input v-model.trim="inbound.stream.ws.host"></a-input>
+        <a-input v-model.trim="inbound.stream.ws.host" placeholder="your-domain-behind-cdn.com"></a-input>
     </a-form-item>
     <a-form-item label='{{ i18n "pages.inbounds.stream.tcp.requestHeader" }}'>
-        <a-button size="small" @click="inbound.stream.ws.addHeader()">+</a-button>
+        <a-space>
+            <a-button size="small" @click="inbound.stream.ws.addHeader()">+</a-button>
+            <a-tooltip>
+                <template slot="title">
+                    <div style="font-size:11px;line-height:1.6;">
+                        <b>WebSocket Browser Headers</b><br/>
+                        افزودن headers واقعی مرورگر<br/>
+                        برای دور زدن DPI عمیق
+                    </div>
+                </template>
+                <a-button size="small" type="dashed" style="border-color:#1890ff;color:#1890ff;"
+                    @click="() => {
+                        const host = inbound.stream.ws.host || location.hostname;
+                        inbound.stream.ws.headers = [
+                            { name: 'User-Agent', value: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' },
+                            { name: 'Origin', value: 'https://' + host },
+                            { name: 'Sec-WebSocket-Extensions', value: 'permessage-deflate; client_max_window_bits' },
+                            { name: 'Accept-Language', value: 'fa-IR,fa;q=0.9,en-US;q=0.8,en;q=0.7' },
+                            { name: 'Accept-Encoding', value: 'gzip, deflate, br' },
+                            { name: 'Cache-Control', value: 'no-cache' },
+                            { name: 'Pragma', value: 'no-cache' },
+                        ];
+                    }">
+                    🌐 Browser Headers
+                </a-button>
+            </a-tooltip>
+        </a-space>
     </a-form-item>
     <a-form-item :wrapper-col="{span:24}">
         <a-input-group compact v-for="(header, index) in inbound.stream.ws.headers">
@@ -24,3 +66,4 @@
     </a-form-item>
 </a-form>
 {{end}}
+

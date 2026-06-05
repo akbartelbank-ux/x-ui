@@ -4,7 +4,19 @@
         <a-input v-model.trim="inbound.stream.grpc.serviceName" style="width: 250px;"></a-input>
     </a-form-item>
     <a-form-item label='{{ i18n "pages.inbounds.stream.grpc.authority" }}'>
-        <a-input v-model.trim="inbound.stream.grpc.authority"></a-input>
+        <a-input v-model.trim="inbound.stream.grpc.authority" :placeholder="inbound.stream.tls.sni || (inbound.stream.isReality && inbound.stream.reality.serverNames ? inbound.stream.reality.serverNames.split(',')[0] : '') || 'example.com'">
+            <a-button slot="addonAfter" size="small" type="primary"
+                @click="() => {
+                    const sni = inbound.stream.tls.sni || (inbound.stream.isReality && inbound.stream.reality.serverNames ? inbound.stream.reality.serverNames.split(',')[0] : '');
+                    if (sni) {
+                        inbound.stream.grpc.authority = sni;
+                    } else {
+                        $message.warning('ابتدا SNI یا دامنه Reality را مشخص کنید / Please specify SNI or Reality domain first');
+                    }
+                }">
+                Auto-Fill SNI
+            </a-button>
+        </a-input>
     </a-form-item>
     <a-form-item label='{{ i18n "pages.inbounds.stream.grpc.multiMode" }}'>
         <a-switch v-model="inbound.stream.grpc.multiMode"></a-switch>
