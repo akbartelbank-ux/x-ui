@@ -394,6 +394,12 @@ func (s *SubService) genVmessLink(inbound *model.Inbound, email string) string {
 				newObj["packets"], _ = fragmentValue["packets"].(string)
 				newObj["length"], _ = fragmentValue["length"].(string)
 				newObj["interval"], _ = fragmentValue["interval"].(string)
+			} else {
+				if p, l, d, ok := getFragmentSettings(stream); ok {
+					if len(p) > 0 { newObj["packets"] = p }
+					if len(l) > 0 { newObj["length"] = l }
+					if len(d) > 0 { newObj["interval"] = d }
+				}
 			}
 			if index > 0 {
 				links += "\n"
@@ -402,6 +408,12 @@ func (s *SubService) genVmessLink(inbound *model.Inbound, email string) string {
 			links += "vmess://" + base64.StdEncoding.EncodeToString(jsonStr)
 		}
 		return links
+	}
+
+	if p, l, d, ok := getFragmentSettings(stream); ok {
+		if len(p) > 0 { obj["packets"] = p }
+		if len(l) > 0 { obj["length"] = l }
+		if len(d) > 0 { obj["interval"] = d }
 	}
 
 	obj["ps"] = s.genRemark(inbound, email, "")
@@ -601,6 +613,16 @@ func (s *SubService) genVlessLink(inbound *model.Inbound, email string) string {
 				params["packets"] = fragmentValue["packets"].(string)
 				params["length"] = fragmentValue["length"].(string)
 				params["interval"] = fragmentValue["interval"].(string)
+			} else {
+				if p, l, d, ok := getFragmentSettings(stream); ok {
+					if len(p) > 0 { params["packets"] = p } else { delete(params, "packets") }
+					if len(l) > 0 { params["length"] = l } else { delete(params, "length") }
+					if len(d) > 0 { params["interval"] = d } else { delete(params, "interval") }
+				} else {
+					delete(params, "packets")
+					delete(params, "length")
+					delete(params, "interval")
+				}
 			}
 			link := fmt.Sprintf("vless://%s@%s:%d", uuid, dest, port)
 
@@ -629,6 +651,12 @@ func (s *SubService) genVlessLink(inbound *model.Inbound, email string) string {
 			links += url.String()
 		}
 		return links
+	}
+
+	if p, l, d, ok := getFragmentSettings(stream); ok {
+		if len(p) > 0 { params["packets"] = p }
+		if len(l) > 0 { params["length"] = l }
+		if len(d) > 0 { params["interval"] = d }
 	}
 
 	link := fmt.Sprintf("vless://%s@%s:%d", uuid, address, port)
@@ -823,6 +851,16 @@ func (s *SubService) genTrojanLink(inbound *model.Inbound, email string) string 
 				params["packets"] = fragmentValue["packets"].(string)
 				params["length"] = fragmentValue["length"].(string)
 				params["interval"] = fragmentValue["interval"].(string)
+			} else {
+				if p, l, d, ok := getFragmentSettings(stream); ok {
+					if len(p) > 0 { params["packets"] = p } else { delete(params, "packets") }
+					if len(l) > 0 { params["length"] = l } else { delete(params, "length") }
+					if len(d) > 0 { params["interval"] = d } else { delete(params, "interval") }
+				} else {
+					delete(params, "packets")
+					delete(params, "length")
+					delete(params, "interval")
+				}
 			}
 			link := fmt.Sprintf("trojan://%s@%s:%d", password, dest, port)
 
@@ -851,6 +889,12 @@ func (s *SubService) genTrojanLink(inbound *model.Inbound, email string) string 
 			links += url.String()
 		}
 		return links
+	}
+
+	if p, l, d, ok := getFragmentSettings(stream); ok {
+		if len(p) > 0 { params["packets"] = p }
+		if len(l) > 0 { params["length"] = l }
+		if len(d) > 0 { params["interval"] = d }
 	}
 
 	link := fmt.Sprintf("trojan://%s@%s:%d", password, address, port)
@@ -1021,6 +1065,16 @@ func (s *SubService) genShadowsocksLink(inbound *model.Inbound, email string) st
 				params["packets"] = fragmentValue["packets"].(string)
 				params["length"] = fragmentValue["length"].(string)
 				params["interval"] = fragmentValue["interval"].(string)
+			} else {
+				if p, l, d, ok := getFragmentSettings(stream); ok {
+					if len(p) > 0 { params["packets"] = p } else { delete(params, "packets") }
+					if len(l) > 0 { params["length"] = l } else { delete(params, "length") }
+					if len(d) > 0 { params["interval"] = d } else { delete(params, "interval") }
+				} else {
+					delete(params, "packets")
+					delete(params, "length")
+					delete(params, "interval")
+				}
 			}
 			link := fmt.Sprintf("ss://%s@%s:%d", base64.StdEncoding.EncodeToString([]byte(encPart)), dest, port)
 
@@ -1049,6 +1103,12 @@ func (s *SubService) genShadowsocksLink(inbound *model.Inbound, email string) st
 			links += url.String()
 		}
 		return links
+	}
+
+	if p, l, d, ok := getFragmentSettings(stream); ok {
+		if len(p) > 0 { params["packets"] = p }
+		if len(l) > 0 { params["length"] = l }
+		if len(d) > 0 { params["interval"] = d }
 	}
 
 	link := fmt.Sprintf("ss://%s@%s:%d", base64.StdEncoding.EncodeToString([]byte(encPart)), address, inbound.Port)
@@ -1384,4 +1444,42 @@ func searchHost(headers interface{}) string {
 	}
 
 	return ""
+}
+
+func getFragmentSettings(stream map[string]interface{}) (packets string, length string, interval string, ok bool) {
+	if stream == nil {
+		return "", "", "", false
+	}
+	finalmask, _ := stream["finalmask"].(map[string]interface{})
+	if finalmask == nil {
+		return "", "", "", false
+	}
+	tcpList, _ := finalmask["tcp"].([]interface{})
+	for _, item := range tcpList {
+		mask, _ := item.(map[string]interface{})
+		if mask == nil {
+			continue
+		}
+		maskType, _ := mask["type"].(string)
+		if maskType == "fragment" {
+			settings, _ := mask["settings"].(map[string]interface{})
+			if settings == nil {
+				continue
+			}
+			var p, l, d string
+			if val, exists := settings["packets"]; exists {
+				p, _ = val.(string)
+			}
+			if val, exists := settings["length"]; exists {
+				l, _ = val.(string)
+			}
+			if val, exists := settings["delay"]; exists {
+				d, _ = val.(string)
+			}
+			if len(p) > 0 || len(l) > 0 || len(d) > 0 {
+				return p, l, d, true
+			}
+		}
+	}
+	return "", "", "", false
 }

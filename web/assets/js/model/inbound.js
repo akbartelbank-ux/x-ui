@@ -1921,6 +1921,7 @@ class Inbound extends XrayCommonClass {
             }
         }
 
+        let hasFragment = false;
         if (extProxy) {
             if (!ObjectUtil.isEmpty(extProxy.sni)) {
                 obj.sni = extProxy.sni;
@@ -1938,6 +1939,16 @@ class Inbound extends XrayCommonClass {
                 obj.packets = extProxy.fragment.packets;
                 obj.length = extProxy.fragment.length;
                 obj.interval = extProxy.fragment.interval;
+                hasFragment = true;
+            }
+        }
+
+        if (!hasFragment && this.stream.finalmask && Array.isArray(this.stream.finalmask.tcp)) {
+            const fragMask = this.stream.finalmask.tcp.find(mask => mask.type === 'fragment');
+            if (fragMask && fragMask.settings) {
+                if (fragMask.settings.packets) obj.packets = fragMask.settings.packets;
+                if (fragMask.settings.length) obj.length = fragMask.settings.length;
+                if (fragMask.settings.delay) obj.interval = fragMask.settings.delay;
             }
         }
 
@@ -2041,6 +2052,7 @@ class Inbound extends XrayCommonClass {
             params.set("security", "none");
         }
 
+        let hasFragment = false;
         if (extProxy) {
             if (extProxy.sni?.length > 0) {
                 params.set("sni", extProxy.sni);
@@ -2058,6 +2070,16 @@ class Inbound extends XrayCommonClass {
                 params.set("packets", extProxy.fragment.packets);
                 params.set("length", extProxy.fragment.length);
                 params.set("interval", extProxy.fragment.interval);
+                hasFragment = true;
+            }
+        }
+
+        if (!hasFragment && this.stream.finalmask && Array.isArray(this.stream.finalmask.tcp)) {
+            const fragMask = this.stream.finalmask.tcp.find(mask => mask.type === 'fragment');
+            if (fragMask && fragMask.settings) {
+                if (fragMask.settings.packets) params.set("packets", fragMask.settings.packets);
+                if (fragMask.settings.length) params.set("length", fragMask.settings.length);
+                if (fragMask.settings.delay) params.set("interval", fragMask.settings.delay);
             }
         }
 
@@ -2138,6 +2160,7 @@ class Inbound extends XrayCommonClass {
             }
         }
 
+        let hasFragment = false;
         if (extProxy) {
             if (extProxy.sni?.length > 0) {
                 params.set("sni", extProxy.sni);
@@ -2155,6 +2178,16 @@ class Inbound extends XrayCommonClass {
                 params.set("packets", extProxy.fragment.packets);
                 params.set("length", extProxy.fragment.length);
                 params.set("interval", extProxy.fragment.interval);
+                hasFragment = true;
+            }
+        }
+
+        if (!hasFragment && this.stream.finalmask && Array.isArray(this.stream.finalmask.tcp)) {
+            const fragMask = this.stream.finalmask.tcp.find(mask => mask.type === 'fragment');
+            if (fragMask && fragMask.settings) {
+                if (fragMask.settings.packets) params.set("packets", fragMask.settings.packets);
+                if (fragMask.settings.length) params.set("length", fragMask.settings.length);
+                if (fragMask.settings.delay) params.set("interval", fragMask.settings.delay);
             }
         }
 
@@ -2261,6 +2294,7 @@ class Inbound extends XrayCommonClass {
             params.set("security", "none");
         }
 
+        let hasFragment = false;
         if (extProxy) {
             if (extProxy.sni?.length > 0) {
                 params.set("sni", extProxy.sni);
@@ -2278,6 +2312,16 @@ class Inbound extends XrayCommonClass {
                 params.set("packets", extProxy.fragment.packets);
                 params.set("length", extProxy.fragment.length);
                 params.set("interval", extProxy.fragment.interval);
+                hasFragment = true;
+            }
+        }
+
+        if (!hasFragment && this.stream.finalmask && Array.isArray(this.stream.finalmask.tcp)) {
+            const fragMask = this.stream.finalmask.tcp.find(mask => mask.type === 'fragment');
+            if (fragMask && fragMask.settings) {
+                if (fragMask.settings.packets) params.set("packets", fragMask.settings.packets);
+                if (fragMask.settings.length) params.set("length", fragMask.settings.length);
+                if (fragMask.settings.delay) params.set("interval", fragMask.settings.delay);
             }
         }
         const link = `trojan://${clientPassword}@${address}:${port}`;
