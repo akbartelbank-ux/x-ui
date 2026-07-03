@@ -69,11 +69,11 @@ var defaultValueMap = map[string]string{
 	"spaWindowSeconds":      "60",    // مدت زمان باز ماندن پورت برای IP کلاینت
 	"spaTimestampTolerance": "30",    // حداکثر اختلاف timestamp مجاز (ثانیه)
 
-	// ─── Anti-DPI: SRTP/RTP Tunnel ──────────────────────────────────────────────
+	// ─── Anti-DPI: SRTP/RTP Tunnel ────────────────────────────────────────────
 	"srtpEnable":     "false",
 	"srtpPort":       "3478", // پورت پیش‌فرض صوتی/تصویری STUN/RTP
-	"srtpTargetPort": "443",  // پورت اتصال به xray-core
-	"srtpKey":        "default-srtp-key",
+	"srtpTargetPort": "10101", // پورت inbound لکال xray-core (باید با پورت inbound اینباند یکسان باشد)
+	"srtpKey":        "antigravity-default-srtp-key",
 }
 
 type SettingService struct{}

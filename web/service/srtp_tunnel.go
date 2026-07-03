@@ -135,7 +135,7 @@ func (s *SrtpTunnelService) handleConnection(clientConn net.Conn) {
 
 	// استفاده از کلید پیش‌فرض در صورت خالی بودن
 	if len(key) == 0 {
-		key = []byte("default-srtp-key")
+		key = []byte("antigravity-default-srtp-key")
 	}
 
 	clientCipherReader, err := rc4.NewCipher(key)
