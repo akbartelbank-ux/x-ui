@@ -298,13 +298,13 @@
                                                 <setting-list-item style="padding: 10px 20px" type="text" title='Length'
                                                     v-model="fragmentLength" placeholder="100-200"></setting-list-item>
                                                 <setting-list-item style="padding: 10px 20px" type="text"
-                                                    title='Interval' v-model="fragmentInterval"
-                                                    placeholder="10-20">
+                                                    title='Interval' v-model="fragmentInterval" placeholder="10-20">
                                                 </setting-list-item>
                                                 <a-setting-list-item paddings="small">
                                                     <template #title>MaxSplit</template>
                                                     <template #control>
-                                                        <a-input type="text" v-model="fragmentMaxSplit" placeholder="300-400"></a-input>
+                                                        <a-input type="text" v-model="fragmentMaxSplit"
+                                                            placeholder="300-400"></a-input>
                                                     </template>
                                                 </a-setting-list-item>
                                             </a-collapse-panel>
@@ -335,7 +335,8 @@
                                                                 :dropdown-class-name="themeSwitcher.currentTheme"
                                                                 @change="(value) => updateNoiseType(index, value)">
                                                                 <a-select-option :value="p" :label="p"
-                                                                    v-for="p in ['rand', 'base64', 'str', 'hex']" :key="p">
+                                                                    v-for="p in ['rand', 'base64', 'str', 'hex']"
+                                                                    :key="p">
                                                                     [[ p ]] </a-select-option>
                                                             </a-select>
                                                         </a-col>
@@ -411,13 +412,13 @@
                                                 <a-list-item>
                                                     <a-row style="padding: 0 20px">
                                                         <a-col :lg="24" :xl="12">
-                                                            <a-list-item-meta 
-                                                                title='{{ i18n "pages.xray.directips" }}'/>
+                                                            <a-list-item-meta
+                                                                title='{{ i18n "pages.xray.directips" }}' />
                                                         </a-col>
                                                         <a-col :lg="24" :xl="12">
                                                             <a-select mode="tags" style="width: 100%"
-                                                            v-model="directIPs"
-                                                            :dropdown-class-name="themeSwitcher.currentTheme">
+                                                                v-model="directIPs"
+                                                                :dropdown-class-name="themeSwitcher.currentTheme">
                                                                 <a-select-option :value="p.value" :label="p.label"
                                                                     v-for="p in directIPsOptions"> [[ p.label ]]
                                                                 </a-select-option>
@@ -428,13 +429,13 @@
                                                 <a-list-item>
                                                     <a-row style="padding: 0 20px">
                                                         <a-col :lg="24" :xl="12">
-                                                            <a-list-item-meta 
-                                                                title='{{ i18n "pages.xray.directdomains" }}'/>
+                                                            <a-list-item-meta
+                                                                title='{{ i18n "pages.xray.directdomains" }}' />
                                                         </a-col>
                                                         <a-col :lg="24" :xl="12">
                                                             <a-select mode="tags" style="width: 100%"
-                                                            v-model="directDomains"
-                                                            :dropdown-class-name="themeSwitcher.currentTheme">
+                                                                v-model="directDomains"
+                                                                :dropdown-class-name="themeSwitcher.currentTheme">
                                                                 <a-select-option :value="p.value" :label="p.label"
                                                                     v-for="p in diretDomainsOptions"> [[ p.label ]]
                                                                 </a-select-option>
@@ -450,8 +451,10 @@
                             <a-tab-pane key="6" tab="Anti-DPI Settings">
                                 <a-list item-layout="horizontal">
                                     <!-- SPA Section -->
-                                    <div class="collapse-title" style="border-bottom-color: var(--border-color); margin-top: 10px;">
-                                        <a-icon type="security-scan" style="margin-right: 8px;"></a-icon>Single Packet Authorization (SPA)
+                                    <div class="collapse-title"
+                                        style="border-bottom-color: var(--border-color); margin-top: 10px;">
+                                        <a-icon type="security-scan" style="margin-right: 8px;"></a-icon>Single Packet
+                                        Authorization (SPA)
                                     </div>
                                     <setting-list-item type="switch" title="Enable SPA"
                                         desc="قبل از اتصال اصلی، یک بسته UDP رمزنگاری‌شده فرستاده می‌شود تا پورت فایروال را برای IP کاربر باز کند."
@@ -459,16 +462,20 @@
                                     <template v-if="allSetting.spaEnable">
                                         <setting-list-item type="number" title="SPA UDP Port"
                                             desc="پورت UDP مخفی که سرور به ترافیک احراز هویت گوش می‌کند (پیش‌فرض: 62201)"
-                                            v-model.number="allSetting.spaPort" :min="1" :max="65535"></setting-list-item>
+                                            v-model.number="allSetting.spaPort" :min="1"
+                                            :max="65535"></setting-list-item>
                                         <setting-list-item type="number" title="SPA Main Port"
                                             desc="پورت اصلی سرور (مانند 443 یا پورت اتصال VLESS/VMess) که باید مدیریت شود"
-                                            v-model.number="allSetting.spaMainPort" :min="1" :max="65535"></setting-list-item>
+                                            v-model.number="allSetting.spaMainPort" :min="1"
+                                            :max="65535"></setting-list-item>
                                         <setting-list-item type="number" title="SPA Window (Seconds)"
                                             desc="مدت زمان باز ماندن پورت برای کلاینت پس از دریافت پکت مجاز (پیش‌فرض: 60)"
-                                            v-model.number="allSetting.spaWindowSeconds" :min="10" :max="3600"></setting-list-item>
+                                            v-model.number="allSetting.spaWindowSeconds" :min="10"
+                                            :max="3600"></setting-list-item>
                                         <setting-list-item type="number" title="SPA Timestamp Tolerance (Seconds)"
                                             desc="حداکثر اختلاف زمانی مجاز بین ساعت سرور و کلاینت برای جلوگیری از Replay (پیش‌فرض: 30)"
-                                            v-model.number="allSetting.spaTimestampTolerance" :min="5" :max="300"></setting-list-item>
+                                            v-model.number="allSetting.spaTimestampTolerance" :min="5"
+                                            :max="300"></setting-list-item>
                                         <a-list-item>
                                             <a-row style="padding: 20px">
                                                 <a-col :lg="24" :xl="12">
@@ -476,7 +483,9 @@
                                                         desc="کلید هماهنگ بین کلاینت و سرور برای احراز هویت HMAC-SHA256"></a-list-item-meta>
                                                 </a-col>
                                                 <a-col :lg="24" :xl="12">
-                                                    <a-input-search v-model="allSetting.spaKey" placeholder="Pre-Shared Key (Base64)" enter-button="Generate Key" @search="getNewSpaKeyFromApi">
+                                                    <a-input-search v-model="allSetting.spaKey"
+                                                        placeholder="Pre-Shared Key (Base64)"
+                                                        enter-button="Generate Key" @search="getNewSpaKeyFromApi">
                                                     </a-input-search>
                                                 </a-col>
                                             </a-row>
@@ -484,8 +493,10 @@
                                     </template>
 
                                     <!-- SRTP Tunnel Section -->
-                                    <div class="collapse-title" style="border-bottom-color: var(--border-color); margin-top: 30px;">
-                                        <a-icon type="phone" style="margin-right: 8px;"></a-icon>SRTP / VoIP Tunnel (RFC 4571)
+                                    <div class="collapse-title"
+                                        style="border-bottom-color: var(--border-color); margin-top: 30px;">
+                                        <a-icon type="phone" style="margin-right: 8px;"></a-icon>SRTP / VoIP Tunnel (RFC
+                                        4571)
                                     </div>
                                     <setting-list-item type="switch" title="Enable SRTP Tunnel"
                                         desc="شبیه‌سازی بسته‌های داده معمولی در قالب بسته‌های صوتی/تصویری VoIP استاندارد با رمزنگاری پرسرعت RC4"
@@ -493,12 +504,14 @@
                                     <template v-if="allSetting.srtpEnable">
                                         <setting-list-item type="number" title="Tunnel Listen Port"
                                             desc="پورت عمومی صوتی سرور که کلاینت‌ها به آن متصل می‌شوند (پیش‌فرض: 3478)"
-                                            v-model.number="allSetting.srtpPort" :min="1" :max="65535"></setting-list-item>
+                                            v-model.number="allSetting.srtpPort" :min="1"
+                                            :max="65535"></setting-list-item>
                                         <setting-list-item type="number" title="Tunnel Target Port"
                                             desc="پورت مقصد محلی در سرور (پورت اتصال xray-core شما)"
-                                            v-model.number="allSetting.srtpTargetPort" :min="1" :max="65535"></setting-list-item>
+                                            v-model.number="allSetting.srtpTargetPort" :min="1"
+                                            :max="65535"></setting-list-item>
                                         <setting-list-item type="text" title="Tunnel Encryption Key"
-                                            desc="کلید رمزگذاری متقارن RC4 (پیش‌فرض: antigravity-default-srtp-key)"
+                                            desc="کلید رمزگذاری متقارن RC4 (پیش‌فرض: default-srtp-key)"
                                             v-model="allSetting.srtpKey"></setting-list-item>
                                     </template>
                                 </a-list>
@@ -690,7 +703,7 @@
                 },
                 async getNewSpaKeyFromApi() {
                     this.loading(true);
-                    const msg = await HttpUtil.get(basePath + "xui/API/antiDpi/generateKey");
+                    const msg = await HttpUtil.get("/xui/API/antiDpi/generateKey");
                     this.loading(false);
                     if (msg.success) {
                         this.allSetting.spaKey = msg.obj.key;
@@ -740,11 +753,11 @@
                 fragmentMaxSplit: {
                     get: function () { return this.fragment ? JSON.parse(this.allSetting.subJsonFragment).maxSplit : ""; },
                     set: function (v) {
-                    if (v != "") {
-                        newFragment = JSON.parse(this.allSetting.subJsonFragment);
-                        newFragment.maxSplit = v;
-                        this.allSetting.subJsonFragment = JSON.stringify(newFragment);
-                    }
+                        if (v != "") {
+                            newFragment = JSON.parse(this.allSetting.subJsonFragment);
+                            newFragment.maxSplit = v;
+                            this.allSetting.subJsonFragment = JSON.stringify(newFragment);
+                        }
                     }
                 },
                 noises: {

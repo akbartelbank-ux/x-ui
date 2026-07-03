@@ -48,7 +48,7 @@ class AllSetting {
         this.srtpEnable = false;
         this.srtpPort = 3478;
         this.srtpTargetPort = 443;
-        this.srtpKey = "antigravity-default-srtp-key";
+        this.srtpKey = "default-srtp-key";
 
         this.timeLocation = "Asia/Tehran";
 

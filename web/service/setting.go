@@ -62,21 +62,19 @@ var defaultValueMap = map[string]string{
 	"warp":               "",
 	// ─── Anti-DPI: SPA (Single Packet Authorization) ────────────────────────────
 	// کلید SPA به صورت خودکار تولید می‌شود اگر خالی باشد
-	"spaEnable":               "false",
-	"spaPort":                 "62201",  // پورت UDP مخفی
-	"spaKey":                  "",       // در اولین فعال‌سازی توسط API تولید می‌شود
-	"spaMainPort":             "443",    // پورت اصلی که باید باز/بسته شود
-	"spaWindowSeconds":        "60",     // مدت زمان باز ماندن پورت برای IP کلاینت
-	"spaTimestampTolerance":   "30",     // حداکثر اختلاف timestamp مجاز (ثانیه)
+	"spaEnable":             "false",
+	"spaPort":               "62201", // پورت UDP مخفی
+	"spaKey":                "",      // در اولین فعال‌سازی توسط API تولید می‌شود
+	"spaMainPort":           "443",   // پورت اصلی که باید باز/بسته شود
+	"spaWindowSeconds":      "60",    // مدت زمان باز ماندن پورت برای IP کلاینت
+	"spaTimestampTolerance": "30",    // حداکثر اختلاف timestamp مجاز (ثانیه)
 
 	// ─── Anti-DPI: SRTP/RTP Tunnel ──────────────────────────────────────────────
-	"srtpEnable":              "false",
-	"srtpPort":                "3478",   // پورت پیش‌فرض صوتی/تصویری STUN/RTP
-	"srtpTargetPort":          "443",    // پورت اتصال به xray-core
-	"srtpKey":                 "antigravity-default-srtp-key",
+	"srtpEnable":     "false",
+	"srtpPort":       "3478", // پورت پیش‌فرض صوتی/تصویری STUN/RTP
+	"srtpTargetPort": "443",  // پورت اتصال به xray-core
+	"srtpKey":        "default-srtp-key",
 }
-
-
 
 type SettingService struct{}
 
@@ -712,5 +710,3 @@ func (s *SettingService) GetSrtpKey() (string, error) {
 func (s *SettingService) SetSrtpKey(value string) error {
 	return s.saveSetting("srtpKey", value)
 }
-
-
