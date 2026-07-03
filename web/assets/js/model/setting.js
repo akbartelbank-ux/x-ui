@@ -38,6 +38,18 @@ class AllSetting {
         this.subJsonMux = "";
         this.subJsonRules = "";
 
+        // Anti-DPI
+        this.spaEnable = false;
+        this.spaPort = 62201;
+        this.spaKey = "";
+        this.spaMainPort = 443;
+        this.spaWindowSeconds = 60;
+        this.spaTimestampTolerance = 30;
+        this.srtpEnable = false;
+        this.srtpPort = 3478;
+        this.srtpTargetPort = 443;
+        this.srtpKey = "antigravity-default-srtp-key";
+
         this.timeLocation = "Asia/Tehran";
 
         if (data == null) {

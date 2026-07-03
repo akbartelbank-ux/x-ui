@@ -53,6 +53,18 @@ type AllSetting struct {
 	SubJsonNoises    string `json:"subJsonNoises" form:"subJsonNoises"`
 	SubJsonMux       string `json:"subJsonMux" form:"subJsonMux"`
 	SubJsonRules     string `json:"subJsonRules" form:"subJsonRules"`
+
+	// ─── Anti-DPI Settings ──────────────────────────────────────────────────────
+	SpaEnable             bool   `json:"spaEnable" form:"spaEnable"`
+	SpaPort               int    `json:"spaPort" form:"spaPort"`
+	SpaKey                string `json:"spaKey" form:"spaKey"`
+	SpaMainPort           int    `json:"spaMainPort" form:"spaMainPort"`
+	SpaWindowSeconds      int    `json:"spaWindowSeconds" form:"spaWindowSeconds"`
+	SpaTimestampTolerance int    `json:"spaTimestampTolerance" form:"spaTimestampTolerance"`
+	SrtpEnable            bool   `json:"srtpEnable" form:"srtpEnable"`
+	SrtpPort              int    `json:"srtpPort" form:"srtpPort"`
+	SrtpTargetPort        int    `json:"srtpTargetPort" form:"srtpTargetPort"`
+	SrtpKey               string `json:"srtpKey" form:"srtpKey"`
 }
 
 func (s *AllSetting) CheckValid() error {
@@ -80,6 +92,31 @@ func (s *AllSetting) CheckValid() error {
 
 	if s.SubPort == s.WebPort {
 		return common.NewError("Sub and Web could not use same port:", s.SubPort)
+	}
+
+	// ─── Anti-DPI Validations ───
+	if s.SpaEnable {
+		if s.SpaPort <= 0 || s.SpaPort > 65535 {
+			return common.NewError("SPA UDP port is not a valid port:", s.SpaPort)
+		}
+		if s.SpaMainPort <= 0 || s.SpaMainPort > 65535 {
+			return common.NewError("SPA main port is not a valid port:", s.SpaMainPort)
+		}
+		if s.SpaKey == "" {
+			return common.NewError("SPA key cannot be empty when enabled")
+		}
+	}
+
+	if s.SrtpEnable {
+		if s.SrtpPort <= 0 || s.SrtpPort > 65535 {
+			return common.NewError("SRTP tunnel port is not a valid port:", s.SrtpPort)
+		}
+		if s.SrtpTargetPort <= 0 || s.SrtpTargetPort > 65535 {
+			return common.NewError("SRTP target port is not a valid port:", s.SrtpTargetPort)
+		}
+		if s.SrtpKey == "" {
+			return common.NewError("SRTP key cannot be empty when enabled")
+		}
 	}
 
 	if s.WebCertFile != "" || s.WebKeyFile != "" {
@@ -124,3 +161,4 @@ func (s *AllSetting) CheckValid() error {
 
 	return nil
 }
+

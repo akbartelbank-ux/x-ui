@@ -447,6 +447,62 @@
                                     </a-list-item>
                                 </a-list>
                             </a-tab-pane>
+                            <a-tab-pane key="6" tab="Anti-DPI Settings">
+                                <a-list item-layout="horizontal">
+                                    <!-- SPA Section -->
+                                    <div class="collapse-title" style="border-bottom-color: var(--border-color); margin-top: 10px;">
+                                        <a-icon type="security-scan" style="margin-right: 8px;"></a-icon>Single Packet Authorization (SPA)
+                                    </div>
+                                    <setting-list-item type="switch" title="Enable SPA"
+                                        desc="قبل از اتصال اصلی، یک بسته UDP رمزنگاری‌شده فرستاده می‌شود تا پورت فایروال را برای IP کاربر باز کند."
+                                        v-model="allSetting.spaEnable"></setting-list-item>
+                                    <template v-if="allSetting.spaEnable">
+                                        <setting-list-item type="number" title="SPA UDP Port"
+                                            desc="پورت UDP مخفی که سرور به ترافیک احراز هویت گوش می‌کند (پیش‌فرض: 62201)"
+                                            v-model.number="allSetting.spaPort" :min="1" :max="65535"></setting-list-item>
+                                        <setting-list-item type="number" title="SPA Main Port"
+                                            desc="پورت اصلی سرور (مانند 443 یا پورت اتصال VLESS/VMess) که باید مدیریت شود"
+                                            v-model.number="allSetting.spaMainPort" :min="1" :max="65535"></setting-list-item>
+                                        <setting-list-item type="number" title="SPA Window (Seconds)"
+                                            desc="مدت زمان باز ماندن پورت برای کلاینت پس از دریافت پکت مجاز (پیش‌فرض: 60)"
+                                            v-model.number="allSetting.spaWindowSeconds" :min="10" :max="3600"></setting-list-item>
+                                        <setting-list-item type="number" title="SPA Timestamp Tolerance (Seconds)"
+                                            desc="حداکثر اختلاف زمانی مجاز بین ساعت سرور و کلاینت برای جلوگیری از Replay (پیش‌فرض: 30)"
+                                            v-model.number="allSetting.spaTimestampTolerance" :min="5" :max="300"></setting-list-item>
+                                        <a-list-item>
+                                            <a-row style="padding: 20px">
+                                                <a-col :lg="24" :xl="12">
+                                                    <a-list-item-meta title="SPA Pre-Shared Key"
+                                                        desc="کلید هماهنگ بین کلاینت و سرور برای احراز هویت HMAC-SHA256"></a-list-item-meta>
+                                                </a-col>
+                                                <a-col :lg="24" :xl="12">
+                                                    <a-input-search v-model="allSetting.spaKey" placeholder="Pre-Shared Key (Base64)" enter-button="Generate Key" @search="getNewSpaKeyFromApi">
+                                                    </a-input-search>
+                                                </a-col>
+                                            </a-row>
+                                        </a-list-item>
+                                    </template>
+
+                                    <!-- SRTP Tunnel Section -->
+                                    <div class="collapse-title" style="border-bottom-color: var(--border-color); margin-top: 30px;">
+                                        <a-icon type="phone" style="margin-right: 8px;"></a-icon>SRTP / VoIP Tunnel (RFC 4571)
+                                    </div>
+                                    <setting-list-item type="switch" title="Enable SRTP Tunnel"
+                                        desc="شبیه‌سازی بسته‌های داده معمولی در قالب بسته‌های صوتی/تصویری VoIP استاندارد با رمزنگاری پرسرعت RC4"
+                                        v-model="allSetting.srtpEnable"></setting-list-item>
+                                    <template v-if="allSetting.srtpEnable">
+                                        <setting-list-item type="number" title="Tunnel Listen Port"
+                                            desc="پورت عمومی صوتی سرور که کلاینت‌ها به آن متصل می‌شوند (پیش‌فرض: 3478)"
+                                            v-model.number="allSetting.srtpPort" :min="1" :max="65535"></setting-list-item>
+                                        <setting-list-item type="number" title="Tunnel Target Port"
+                                            desc="پورت مقصد محلی در سرور (پورت اتصال xray-core شما)"
+                                            v-model.number="allSetting.srtpTargetPort" :min="1" :max="65535"></setting-list-item>
+                                        <setting-list-item type="text" title="Tunnel Encryption Key"
+                                            desc="کلید رمزگذاری متقارن RC4 (پیش‌فرض: antigravity-default-srtp-key)"
+                                            v-model="allSetting.srtpKey"></setting-list-item>
+                                    </template>
+                                </a-list>
+                            </a-tab-pane>
                         </a-tabs>
                     </a-space>
                 </a-spin>
@@ -631,6 +687,17 @@
                     const updatedNoises = [...this.noisesArray];
                     updatedNoises[index] = { ...updatedNoises[index], delay: value };
                     this.noisesArray = updatedNoises;
+                },
+                async getNewSpaKeyFromApi() {
+                    this.loading(true);
+                    const msg = await HttpUtil.get("/xui/API/antiDpi/generateKey");
+                    this.loading(false);
+                    if (msg.success) {
+                        this.allSetting.spaKey = msg.obj.key;
+                        this.$message.success("کلید جدید تولید و درج شد. تنظیمات را ذخیره کنید.");
+                    } else {
+                        this.$message.error("خطا در تولید کلید: " + msg.msg);
+                    }
                 },
             },
             computed: {
