@@ -690,7 +690,7 @@
                 },
                 async getNewSpaKeyFromApi() {
                     this.loading(true);
-                    const msg = await HttpUtil.get("/xui/API/antiDpi/generateKey");
+                    const msg = await HttpUtil.get(basePath + "xui/API/antiDpi/generateKey");
                     this.loading(false);
                     if (msg.success) {
                         this.allSetting.spaKey = msg.obj.key;
