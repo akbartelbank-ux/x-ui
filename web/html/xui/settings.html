@@ -502,6 +502,9 @@
                                         desc="شبیه‌سازی بسته‌های داده معمولی در قالب بسته‌های صوتی/تصویری VoIP استاندارد با رمزنگاری پرسرعت RC4"
                                         v-model="allSetting.srtpEnable"></setting-list-item>
                                     <template v-if="allSetting.srtpEnable">
+                                        <setting-list-item type="switch" title="Enable TLS for SRTP"
+                                            desc="رمزگذاری تونل SRTP با لایه TLS (شبیه‌سازی کامل HTTPS برای مقابله با DPI)"
+                                            v-model="allSetting.srtpUseTls"></setting-list-item>
                                         <setting-list-item type="number" title="Tunnel Listen Port"
                                             desc="پورت عمومی صوتی سرور که کلاینت‌ها به آن متصل می‌شوند (پیش‌فرض: 3478)"
                                             v-model.number="allSetting.srtpPort" :min="1"

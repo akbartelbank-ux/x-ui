@@ -65,6 +65,7 @@ type AllSetting struct {
 	SrtpPort              int    `json:"srtpPort" form:"srtpPort"`
 	SrtpTargetPort        int    `json:"srtpTargetPort" form:"srtpTargetPort"`
 	SrtpKey               string `json:"srtpKey" form:"srtpKey"`
+	SrtpUseTls            bool   `json:"srtpUseTls" form:"srtpUseTls"`
 }
 
 func (s *AllSetting) CheckValid() error {

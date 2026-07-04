@@ -49,6 +49,7 @@ class AllSetting {
         this.srtpPort = 3478;
         this.srtpTargetPort = 443;
         this.srtpKey = "default-srtp-key";
+        this.srtpUseTls = false;
 
         this.timeLocation = "Asia/Tehran";
 
