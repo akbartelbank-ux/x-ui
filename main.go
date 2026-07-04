@@ -106,8 +106,11 @@ func runWebServer() {
 		srtpPort, _ := settingService.GetSrtpPort()
 		srtpTargetPort, _ := settingService.GetSrtpTargetPort()
 		srtpKey, _ := settingService.GetSrtpKey()
+		srtpUseTls, _ := settingService.GetSrtpUseTls()
+		certFile, _ := settingService.GetCertFile()
+		keyFile, _ := settingService.GetKeyFile()
 
-		srtpService.Configure(srtpPort, srtpTargetPort, srtpKey)
+		srtpService.Configure(srtpPort, srtpTargetPort, srtpKey, srtpUseTls, certFile, keyFile)
 		if startErr := srtpService.Start(); startErr != nil {
 			logger.Warning("Anti-DPI SRTP Tunnel failed to start:", startErr)
 		} else {
@@ -185,7 +188,10 @@ func runWebServer() {
 					srtpPort, _ := reloadSettings.GetSrtpPort()
 					srtpTargetPort, _ := reloadSettings.GetSrtpTargetPort()
 					srtpKey, _ := reloadSettings.GetSrtpKey()
-					srtpSvc.Configure(srtpPort, srtpTargetPort, srtpKey)
+					srtpUseTls, _ := reloadSettings.GetSrtpUseTls()
+					certFile, _ := reloadSettings.GetCertFile()
+					keyFile, _ := reloadSettings.GetKeyFile()
+					srtpSvc.Configure(srtpPort, srtpTargetPort, srtpKey, srtpUseTls, certFile, keyFile)
 					if startErr := srtpSvc.Start(); startErr == nil {
 						logger.Info("✓ Anti-DPI SRTP Tunnel restarted after SIGHUP")
 					}

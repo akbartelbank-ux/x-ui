@@ -74,6 +74,7 @@ var defaultValueMap = map[string]string{
 	"srtpPort":       "3478", // پورت پیش‌فرض صوتی/تصویری STUN/RTP
 	"srtpTargetPort": "10101", // پورت inbound لکال xray-core (باید با پورت inbound اینباند یکسان باشد)
 	"srtpKey":        "antigravity-default-srtp-key",
+	"srtpUseTls":     "false",
 }
 
 type SettingService struct{}
@@ -709,4 +710,14 @@ func (s *SettingService) GetSrtpKey() (string, error) {
 // SetSrtpKey کلید رمزنگاری RC4 تونل SRTP را ذخیره می‌کند
 func (s *SettingService) SetSrtpKey(value string) error {
 	return s.saveSetting("srtpKey", value)
+}
+
+// GetSrtpUseTls وضعیت فعال بودن TLS را در تونل SRTP برمی‌گرداند
+func (s *SettingService) GetSrtpUseTls() (bool, error) {
+	return s.getBool("srtpUseTls")
+}
+
+// SetSrtpUseTls وضعیت فعال بودن TLS را در تونل SRTP ذخیره می‌کند
+func (s *SettingService) SetSrtpUseTls(value string) error {
+	return s.saveSetting("srtpUseTls", value)
 }

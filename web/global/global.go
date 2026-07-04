@@ -19,7 +19,7 @@ type SpaServicer interface {
 
 // SrtpTunnelServicer اینترفیس محلی برای سرویس تونل SRTP است.
 type SrtpTunnelServicer interface {
-	Configure(listenPort, targetPort int, pskKey string)
+	Configure(listenPort, targetPort int, pskKey string, useTls bool, certFile, keyFile string)
 	Start() error
 	Stop()
 }

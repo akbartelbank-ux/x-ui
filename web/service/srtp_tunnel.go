@@ -16,6 +16,7 @@ import (
 	"crypto/hmac"
 	"crypto/rc4"
 	"crypto/sha256"
+	"crypto/tls"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -41,6 +42,9 @@ type SrtpTunnelService struct {
 	listenPort int    // پورت بیرونی که سرور روی آن منتظر کلاینت است (مثلاً 3478)
 	targetPort int    // پورت محلی xray-core (مثلاً پورت VLESS/VMess)
 	pskKey     string // کلید پیش‌فرض برای رمزگذاری RC4
+	useTls     bool   // استفاده از TLS برای لایه بیرونی تونل
+	certFile   string // مسیر فایل گواهی SSL
+	keyFile    string // مسیر فایل کلید خصوصی SSL
 }
 
 // NewSrtpTunnelService یک نمونه جدید از سرویس تونل می‌سازد
@@ -51,12 +55,15 @@ func NewSrtpTunnelService() *SrtpTunnelService {
 }
 
 // Configure اعمال تنظیمات تونل
-func (s *SrtpTunnelService) Configure(listenPort, targetPort int, pskKey string) {
+func (s *SrtpTunnelService) Configure(listenPort, targetPort int, pskKey string, useTls bool, certFile, keyFile string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.listenPort = listenPort
 	s.targetPort = targetPort
 	s.pskKey = pskKey
+	s.useTls = useTls
+	s.certFile = certFile
+	s.keyFile = keyFile
 }
 
 // Start راه‌اندازی سرور تونل
@@ -69,7 +76,20 @@ func (s *SrtpTunnelService) Start() error {
 	s.mu.Unlock()
 
 	addr := fmt.Sprintf("0.0.0.0:%d", s.listenPort)
-	listener, err := net.Listen("tcp", addr)
+	var listener net.Listener
+	var err error
+
+	if s.useTls && s.certFile != "" && s.keyFile != "" {
+		cert, err := tls.LoadX509KeyPair(s.certFile, s.keyFile)
+		if err != nil {
+			return fmt.Errorf("SRTP Tunnel TLS: failed to load key pair: %w", err)
+		}
+		config := &tls.Config{Certificates: []tls.Certificate{cert}}
+		listener, err = tls.Listen("tcp", addr, config)
+	} else {
+		listener, err = net.Listen("tcp", addr)
+	}
+
 	if err != nil {
 		return fmt.Errorf("SRTP Tunnel: failed to listen on %s: %w", addr, err)
 	}
@@ -82,7 +102,7 @@ func (s *SrtpTunnelService) Start() error {
 
 	go s.acceptLoop()
 
-	log.Printf("[SRTP Tunnel] Service started on TCP port %d -> forwarding to xray on port %d\n", s.listenPort, s.targetPort)
+	log.Printf("[SRTP Tunnel] Service started on TCP port %d (TLS=%t) -> forwarding to xray on port %d\n", s.listenPort, s.useTls, s.targetPort)
 	return nil
 }
 
