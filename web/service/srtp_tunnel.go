@@ -161,6 +161,8 @@ func (s *SrtpTunnelService) handleConnection(clientConn net.Conn) {
 
 		lenBuf := make([]byte, 2)
 		headerBuf := make([]byte, rtpHeaderSize)
+		// بافر اشتراکی برای پی‌لود به منظور جلوگیری از تخصیص پی‌درپی حافظه
+		payloadBuf := make([]byte, 65536)
 
 		for {
 			// ۱. خواندن طول فریم (۲ بایت)
@@ -204,9 +206,12 @@ func (s *SrtpTunnelService) handleConnection(clientConn net.Conn) {
 				ciphersMu.Unlock()
 			}
 
-			// ۳. خواندن پی‌لود رمزگذاری‌شده
-			payloadLen := frameLen - rtpHeaderSize
-			payload := make([]byte, payloadLen)
+			// ۳. خواندن پی‌لود رمزگذاری‌شده به صورت مستقیم در بافر قابل استفاده مجدد
+			payloadLen := int(frameLen - rtpHeaderSize)
+			if payloadLen > len(payloadBuf) {
+				return // خارج از محدوده بافر
+			}
+			payload := payloadBuf[:payloadLen]
 			_, err = io.ReadFull(clientReader, payload)
 			if err != nil {
 				return
@@ -217,12 +222,11 @@ func (s *SrtpTunnelService) handleConnection(clientConn net.Conn) {
 				continue
 			}
 
-			// ۴. رمزگشایی پی‌لود با RC4
-			decrypted := make([]byte, payloadLen)
-			clientCipherReader.XORKeyStream(decrypted, payload)
+			// ۴. رمزگشایی درجا (in-place)
+			clientCipherReader.XORKeyStream(payload, payload)
 
 			// ۵. نوشتن به xray-core
-			_, err = xrayConn.Write(decrypted)
+			_, err = xrayConn.Write(payload)
 			if err != nil {
 				return
 			}
@@ -242,6 +246,8 @@ func (s *SrtpTunnelService) handleConnection(clientConn net.Conn) {
 		}
 
 		rawBuf := make([]byte, maxPayloadSize)
+		// بافر خروجی فریم جهت بهینه‌سازی و استفاده مجدد
+		writeBuf := make([]byte, 2+rtpHeaderSize+maxPayloadSize)
 		var seqNum uint16 = 0
 		var timestamp uint32 = 0
 
@@ -249,7 +255,8 @@ func (s *SrtpTunnelService) handleConnection(clientConn net.Conn) {
 		lastActive := time.Now()
 
 		for {
-			xrayConn.SetReadDeadline(time.Now().Add(1 * time.Second))
+			// کاهش فراخوانی سیستمی و بیدارباش با تنظیم مهلت ۵ ثانیه‌ای به جای ۱ ثانیه‌ای
+			xrayConn.SetReadDeadline(time.Now().Add(idleDuration))
 			n, err := xrayConn.Read(rawBuf)
 
 			if err != nil {
@@ -291,12 +298,8 @@ func (s *SrtpTunnelService) handleConnection(clientConn net.Conn) {
 			payload := rawBuf[:n]
 			lastActive = time.Now()
 
-			// ۱. رمزگذاری پی‌لود
-			encrypted := make([]byte, n)
-			clientCipherWriter.XORKeyStream(encrypted, payload)
-
-			// ۲. ساخت هدر RTP (۱۲ بایت)
-			header := make([]byte, rtpHeaderSize)
+			// ۱. ساخت هدر RTP (۱۲ بایت)
+			header := writeBuf[2:14]
 			header[0] = 0x80 // Version 2
 			header[1] = 96   // Payload Type: 96 (Dynamic Video)
 			binary.BigEndian.PutUint16(header[2:4], seqNum)
@@ -306,19 +309,15 @@ func (s *SrtpTunnelService) handleConnection(clientConn net.Conn) {
 			seqNum++
 			timestamp += uint32(n)
 
-			// ۳. ارسال فریم: [طول کل فریم (۲ بایت) | هدر (۱۲ بایت) | پی‌لود رمزگذاری‌شده (N بایت)]
-			frameLen := uint16(rtpHeaderSize + n)
-			frameLenBuf := make([]byte, 2)
-			binary.BigEndian.PutUint16(frameLenBuf, frameLen)
+			// ۲. رمزگذاری مستقیم پی‌لود درون بافر خروجی بدون تخصیص آرایه جدید
+			clientCipherWriter.XORKeyStream(writeBuf[14:14+n], payload)
 
-			// ادغام فریم طول، هدر و داده جهت بهینه‌سازی سرعت (Write Coalescing)
-			frameBytes := make([]byte, 2+rtpHeaderSize+n)
-			copy(frameBytes[0:2], frameLenBuf)
-			copy(frameBytes[2:14], header)
-			copy(frameBytes[14:], encrypted)
+			// ۳. پر کردن فریم طول (۲ بایت)
+			frameLen := uint16(rtpHeaderSize + n)
+			binary.BigEndian.PutUint16(writeBuf[0:2], frameLen)
 
 			clientConn.SetWriteDeadline(time.Now().Add(5 * time.Second))
-			_, err = clientConn.Write(frameBytes)
+			_, err = clientConn.Write(writeBuf[:2+rtpHeaderSize+n])
 			if err != nil {
 				return
 			}
